@@ -1,2 +1,4 @@
 # typhoon
-C++ web
+
+Typhoon is C++ web framework (inspired by Python Tornado)
+
