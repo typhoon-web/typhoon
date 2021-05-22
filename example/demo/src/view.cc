@@ -17,7 +17,6 @@ namespace typhoon {
 
     void View::on_http(const websocketpp::connection_hdl& hdl) {
         auto con_ptr = this->server.get_con_from_hdl(hdl);
-        std::cout << "on_http" << std::endl;
     }
 
 
