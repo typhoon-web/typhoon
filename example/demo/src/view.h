@@ -15,10 +15,10 @@ namespace typhoon {
     class View : public web::RequestHandler {
     public:
         ~View();
-        explicit View(const unsigned int& port);
+        View();
 
-    private:
-        void on_http(const websocketpp::connection_hdl&) override; // connection http callback
+    public:
+        View hello(web::ConPtr con_ptr);
 
     };
 

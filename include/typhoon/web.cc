@@ -12,26 +12,15 @@ namespace typhoon {
 namespace web {
 
     RequestHandler::~RequestHandler() = default;
-    RequestHandler::RequestHandler(const unsigned int& port) : _http_port(port) {
-        this->server.set_error_channels(websocketpp::log::elevel::all); // log
-        this->server.set_access_channels(websocketpp::log::alevel::all ^ websocketpp::log::alevel::frame_payload);
-        this->server.clear_access_channels(websocketpp::log::alevel::all); // disable all ws-system log
-        this->server.init_asio(); // asio init
-        this->server.set_reuse_addr(true); // reset asio listen
-        this->server.set_http_handler(std::bind(&RequestHandler::on_http, this, std::placeholders::_1));
+    RequestHandler::RequestHandler() = default;
+
+    Application::~Application() = default;
+    Application::Application() {
+        m_server_ptr = std::make_shared<IOServer>();
+        this->_app_init();
     }
 
-    void RequestHandler::run() {
-        this->server.listen(this->_http_port);
-        this->server.start_accept();
-        this->server.run(); // block
-    }
-
-    void RequestHandler::shutdown() {
-        this->server.stop_listening();
-    }
-
-    void RequestHandler::cross_origin(io_server::connection_ptr& con_ptr) {
+    void RequestHandler::_cross_origin(ConPtr& con_ptr) {
         std::string all = "*";
         std::string methods_value = "GET, POST, PUT, DELETE, OPTIONS";
         std::string type_value = "application/json";
@@ -48,16 +37,16 @@ namespace web {
         con_ptr->append_header(allow_methods,methods_value);
     }
 
-    const std::string& RequestHandler::get_uri(io_server::connection_ptr& con_ptr) {
-        return con_ptr->get_request().get_uri();
-    }
-
-    void RequestHandler::exception_view(io_server::connection_ptr& con_ptr) {
+    void RequestHandler::exception_view(ConPtr& con_ptr) {
         con_ptr->set_body("404: Not Found");
         con_ptr->set_status(websocketpp::http::status_code::not_found);
     }
 
-    nlohmann::json RequestHandler::get_data(io_server::connection_ptr& con_ptr) {
+    void RequestHandler::bind_app(const ApplicationPtr& app) {
+        m_app_ptr = app;
+    }
+
+    nlohmann::json RequestHandler::get_data(ConPtr& con_ptr) {
         nlohmann::json json_data;
         std::string data = con_ptr->get_request_body();
 
@@ -68,15 +57,46 @@ namespace web {
         return json_data;
     }
 
-    void RequestHandler::response(io_server::connection_ptr& con_ptr, nlohmann::json& data) {
-        this->cross_origin(con_ptr); // 跨域
+    void RequestHandler::response(ConPtr& con_ptr, nlohmann::json& data) {
+        this->_cross_origin(con_ptr); // 跨域
         con_ptr->set_body(data.dump(0));
         con_ptr->set_status(websocketpp::http::status_code::ok);
-//        httplog->info("{} {} {}", con_ptr->get_response().get_status_code(), con_ptr->get_request().get_method(), con_ptr->get_request().get_uri());
     }
 
-    void RequestHandler::on_http(const websocketpp::connection_hdl& hdl) {
+    void Application::_app_init() {
+        this->m_server_ptr->set_error_channels(websocketpp::log::elevel::all); // log
+        this->m_server_ptr->set_access_channels(websocketpp::log::alevel::all ^ websocketpp::log::alevel::frame_payload);
+        this->m_server_ptr->clear_access_channels(websocketpp::log::alevel::all); // disable all ws-system log
+        this->m_server_ptr->init_asio(); // asio init
+        this->m_server_ptr->set_reuse_addr(true); // reset asio listen
+        this->m_server_ptr->set_http_handler(std::bind(&Application::on_http, this, std::placeholders::_1));
+    }
 
+    void Application::on_http(const ConHdl& hdl) {
+    }
+
+    Application& Application::listen(const unsigned int& port) {
+        m_server_ptr->listen(port);
+        return *this;
+    }
+
+    Application& Application::start() {
+        m_server_ptr->start_accept();
+        m_server_ptr->run();
+        return *this;
+    }
+
+    Application& Application::shutdown() {
+        m_server_ptr->stop_listening();
+        return *this;
+    }
+
+    ConPtr Application::get_con_from_hdl(const ConHdl& hdl) {
+        return m_server_ptr->get_con_from_hdl(hdl);
+    }
+
+    const std::string& Application::get_uri(ConPtr& con_ptr) {
+        return con_ptr->get_request().get_uri();
     }
 
 

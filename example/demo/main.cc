@@ -7,11 +7,12 @@
 * Written by Huang Minhang <huangminhang@trunk.tech>, 2021/5/21 15:59
 */
 #include <iostream>
-#include "src/view.h"
+#include "src/app.h"
 
 int main(int argc, char *argv[]) {
-    std::cout << "Hello first demo typhoon" << std::endl;
-    typhoon::View http_server(21522);
-    http_server.run();
+
+    typhoon::app::Application app;
+    app.listen(21522).start();
+
     return 0;
 }

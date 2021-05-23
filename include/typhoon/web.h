@@ -8,35 +8,61 @@
 */
 #ifndef TYPHOON_WEB_H
 #define TYPHOON_WEB_H
+#include <list>
+#include <memory>
 #include <nlohmann/json.hpp>
+#include <boost/algorithm/string/classification.hpp>
+#include <boost/algorithm/string/split.hpp>
 #include "websocketpp/config/asio_no_tls.hpp"
 #include "websocketpp/server.hpp"
 
 namespace typhoon {
 namespace web {
 
-    typedef websocketpp::server<websocketpp::config::asio> io_server;
+    typedef class Application ApplicationType;
+    typedef websocketpp::server<websocketpp::config::asio> IOServer;
+    typedef websocketpp::connection_hdl ConHdl;
+    typedef IOServer::connection_ptr ConPtr;
+    typedef std::shared_ptr<IOServer> IOServerPtr;
+    typedef std::shared_ptr<ApplicationType> ApplicationPtr;
 
     class RequestHandler {
     public:
         ~RequestHandler();
-        explicit RequestHandler(const unsigned int& port);
-        virtual void run() final;
-        virtual void shutdown() final;
+        RequestHandler();
+
+        virtual nlohmann::json get_data(ConPtr&) final;
+        virtual void response(ConPtr&, nlohmann::json&) final;
+        void exception_view(ConPtr&);
+        void bind_app(const ApplicationPtr& app);
 
     protected:
-        void cross_origin(io_server::connection_ptr&);
-        const std::string& get_uri(io_server::connection_ptr&);
-        void exception_view(io_server::connection_ptr&);
-        virtual nlohmann::json get_data(io_server::connection_ptr&) final;
-        virtual void response(io_server::connection_ptr&,nlohmann::json&) final;
-        virtual void on_http(const websocketpp::connection_hdl&);
-
-    protected:
-        io_server server;
+        ApplicationPtr m_app_ptr;
 
     private:
-        const unsigned int _http_port;
+        void _cross_origin(ConPtr& con_ptr);
+
+    }; // RequestHandler
+
+    class Application {
+    public:
+        ~Application();
+        Application();
+
+        virtual ConPtr get_con_from_hdl(const ConHdl& hdl) final;
+        const std::string& get_uri(ConPtr&);
+
+        virtual Application& listen(const unsigned int& port) final; // 监听端口号
+        virtual Application& start() final; // block
+        virtual Application& shutdown() final; // stop
+
+    protected:
+        virtual void on_http(const ConHdl&); // http 钩子
+
+        IOServerPtr m_server_ptr;
+
+    private:
+        void _app_init();
 
     };
 
