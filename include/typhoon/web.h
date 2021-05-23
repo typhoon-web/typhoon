@@ -32,12 +32,10 @@ namespace web {
         RequestHandler();
 
         virtual nlohmann::json get_data(ConPtr&) final;
+        virtual std::string get_method(ConPtr&) final;
+        virtual std::string get_host(ConPtr&) final;
         virtual void response(ConPtr&, nlohmann::json&) final;
         void exception_view(ConPtr&);
-        void bind_app(const ApplicationPtr& app);
-
-    protected:
-        ApplicationPtr m_app_ptr;
 
     private:
         void _cross_origin(ConPtr& con_ptr);
@@ -50,19 +48,26 @@ namespace web {
         Application();
 
         virtual ConPtr get_con_from_hdl(const ConHdl& hdl) final;
-        const std::string& get_uri(ConPtr&);
-
+        virtual const std::string& get_uri(ConPtr&) final;
+        virtual const std::string& get_host(ConPtr&) final;
         virtual Application& listen(const unsigned int& port) final; // 监听端口号
         virtual Application& start() final; // block
         virtual Application& shutdown() final; // stop
 
     protected:
         virtual void on_http(const ConHdl&); // http 钩子
+        void on_open(const ConHdl& hdl); // open callback
+        void on_close(const ConHdl& hdl); // close callback
+        void on_message(const ConHdl& hdl, IOServer::message_ptr msg); // close callback
+        void add_user(const ConHdl& hdl); // 新增用户
+        void del_user(const ConHdl& hdl); // 删除当前用户
 
         IOServerPtr m_server_ptr;
 
     private:
         void _app_init();
+
+        std::list<ConHdl> m_user_list; // 用户列表
 
     };
 

@@ -30,8 +30,9 @@ namespace app {
         auto con_ptr = get_con_from_hdl(hdl);
         switch (this->reverse_url(this->get_uri(con_ptr))) {
             case url::ok:
-                this->m_view_ptr->hello(con_ptr);break;
+                m_view_ptr->hello(con_ptr);break;
             default:
+                m_view_ptr->exception_view(con_ptr);
                 break;
         }; // switch
     }
