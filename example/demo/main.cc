@@ -12,7 +12,7 @@
 int main(int argc, char *argv[]) {
 
     typhoon::app::Application app;
-    app.listen(21522).start();
+    app.listen(21522).set_timer(1000).start();
 
     return 0;
 }

@@ -37,6 +37,23 @@ namespace app {
         }; // switch
     }
 
+    Application& Application::set_timer(long duration) {
+        m_timer = m_server_ptr->set_timer(duration, std::bind(&Application::on_timer,this, std::placeholders::_1, duration));
+        std::cout << "set_timer" << std::endl;
+        return *this;
+    }
+
+    void Application::on_timer(const websocketpp::lib::error_code& ec, long duration) {
+        std::cout << "on_timer" << std::endl;
+        if (ec) {
+            // there was an error, stop telemetry
+            return;
+        }
+        // set timer for next telemetry check
+        set_timer(duration);
+        std::cout << "on_timer endl" << std::endl;
+    }
+
 
 } // namespace app
 } // namespace typhoon

@@ -21,12 +21,16 @@ namespace app {
         ~Application();
         Application();
 
+        Application& set_timer(long duration) override; // 周期定时器
+        void on_timer(const websocketpp::lib::error_code& ec, long duration); // 定时器回调
+
     private:
         void on_http(const web::ConHdl&) final; // http 钩子
         int reverse_url(const std::string&);
 
     private:
         std::shared_ptr<View> m_view_ptr;
+        web::IOServer::timer_ptr m_timer;
         enum url {ok=0};
         std::unordered_map<std::string, unsigned int> router =  {
             std::pair<std::string, unsigned int>("/api/ok/",url::ok),

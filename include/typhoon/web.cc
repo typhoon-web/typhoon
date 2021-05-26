@@ -144,6 +144,10 @@ namespace web {
         return *this;
     }
 
+    Application& Application::set_timer(long duration) {
+        return *this;
+    }
+
     ConPtr Application::get_con_from_hdl(const ConHdl& hdl) {
         return m_server_ptr->get_con_from_hdl(hdl);
     }

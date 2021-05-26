@@ -53,6 +53,7 @@ namespace web {
         virtual Application& listen(const unsigned int& port) final; // 监听端口号
         virtual Application& start() final; // block
         virtual Application& shutdown() final; // stop
+        virtual Application& set_timer(long duration); // 周期定时器
 
     protected:
         virtual void on_http(const ConHdl&); // http 钩子
