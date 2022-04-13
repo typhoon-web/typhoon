@@ -1,8 +1,10 @@
 cmake_minimum_required(VERSION 3.5.1)
-
-project(typhoon_server_demo)
+project(typhoon_simple)
 
 set(TARGET_NAME ${PROJECT_NAME})
 
 add_executable(${TARGET_NAME}_runner main.cc)
 
+target_link_libraries(${TARGET_NAME}_runner
+  typhoon 
+)
