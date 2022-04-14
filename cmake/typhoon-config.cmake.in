@@ -1,0 +1,16 @@
+@PACKAGE_INIT@
+# - Config file for the trunk ins package
+# It defines the following variables
+#  Typhoon_INCLUDE_DIRS - include directory
+#  Typhoon_LIBRARY_DIRS - library directory
+#  Typhoon_LIBRARIES   - libraries to link against
+
+# Compute paths
+get_filename_component(TRUNK_MAP_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+set(Typhoon_INCLUDE_DIRS "@PACKAGE_CMAKE_INSTALL_INCLUDEDIR@")
+set(Typhoon_LIBRARY_DIRS "@PACKAGE_CMAKE_INSTALL_LIBDIR@")
+
+include("${TRUNK_MAP_CMAKE_DIR}/typhoon-targets.cmake")
+
+set(Typhoon_LIBRARIES "typhoon")
+

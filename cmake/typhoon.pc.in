@@ -1,0 +1,12 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=${prefix}
+includedir=${prefix}/@CMAKE_INSTALL_INCLUDEDIR@
+libdir=${exec_prefix}/@CMAKE_INSTALL_LIBDIR@
+
+Name: typhoon
+Description: generic typhoon library
+Version: @PROJECT_VERSION@
+Requires:
+Libs: -L${libdir} -l@TARGET_NAME@
+Cflags: -I${includedir}
+
