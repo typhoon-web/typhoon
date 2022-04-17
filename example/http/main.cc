@@ -1,0 +1,35 @@
+#include <iostream>
+#include <memory>
+#include <string>
+#include "typhoon.h"
+
+
+class MyApi1: public typhoon::RequestHandler {
+public: 
+  void Get(typhoon::Application* app, typhoon::Connection* conn) override {
+    std::cout << "simple get" << std::endl; 
+    Response(app, conn, "simple http get");
+  }
+  
+  void Post(typhoon::Application* app, typhoon::Connection* conn) override {
+    std::cout << "simple post" << std::endl; 
+    auto data = GetRequestData(conn);
+    std::cout << "data: " << data << std::endl;
+    Response(app, conn, "simple http post");
+  }
+
+};
+
+
+int main(int argc, char *argv[]) {
+  typhoon::Options options;
+  options.port = 9900;
+  std::cout << "typhoon simple http: " << options.port << std::endl;
+  typhoon::Server server(options);
+  auto api = std::make_shared<MyApi1>();
+  server.AddHandle("/api/simple/", api);
+  server.Start();
+  return 0;
+}
+
+

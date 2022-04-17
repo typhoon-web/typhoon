@@ -1,25 +1,24 @@
-#include "handler.h"
-#include <civetweb.h>
+#include "civethandle.h"
+#include <string>
 
-namespace trunk {
 namespace typhoon {
 
-WebSocketBase::WebSocketBase(const std::string &name) : name_(name) {}
+WebSocketHandler::WebSocketHandler(const std::string& name) :name_(name) {}
 
-void WebSocketBase::Open() { std::cout << "open" << std::endl; }
+void WebSocketHandler::Open() { std::cout << "on open" << std::endl; }
 
-void WebSocketBase::OnMessage(const std::string &msg) {}
+void WebSocketHandler::OnMessage(const std::string &msg) {}
 
-void WebSocketBase::OnPong() {}
+void WebSocketHandler::OnPong() { std::cout << "on pong" << std::endl; }
 
-void WebSocketBase::OnPing() {}
+void WebSocketHandler::OnPing() {}
 
-void WebSocketBase::OnClose() { std::cout << "close" << std::endl; }
+void WebSocketHandler::OnClose() { std::cout << "on close" << std::endl; }
 
-void WebSocketBase::SendData(mg_connection *conn,
-                             const std::string &data,
-                             bool skippable,
-                             int op_code) {
+void WebSocketHandler::SendData(mg_connection *conn,
+                                const std::string &data,
+                                bool skippable,
+                                int op_code) {
   std::shared_ptr<std::mutex> connection_lock;
   {
     std::unique_lock<std::mutex> lock(mutex_);
@@ -45,7 +44,7 @@ void WebSocketBase::SendData(mg_connection *conn,
   }
 }
 
-void WebSocketBase::BroadcastData(const std::string &data, bool skippable) {
+void WebSocketHandler::BroadcastData(const std::string &data, bool skippable) {
   std::vector<Connection *> connections_to_send;
   {
     std::unique_lock<std::mutex> lock(mutex_);
@@ -63,12 +62,16 @@ void WebSocketBase::BroadcastData(const std::string &data, bool skippable) {
   }
 }
 
-bool WebSocketBase::handleConnection(Application *app,
-                                     const mg_connection *conn) {
+std::string WebSocketHandler::name() const {
+  return name_;
+}
+
+bool WebSocketHandler::handleConnection(Application *app,
+                                        const mg_connection *conn) {
   return true;
 }
 
-void WebSocketBase::handleReadyState(Application *app, Connection *conn) {
+void WebSocketHandler::handleReadyState(Application *app, Connection *conn) {
   {
     std::unique_lock<std::mutex> lock(mutex_);
     user_pool_.emplace(conn, std::make_shared<std::mutex>());
@@ -76,8 +79,11 @@ void WebSocketBase::handleReadyState(Application *app, Connection *conn) {
   this->Open();
 }
 
-bool WebSocketBase::handleData(Application *app, Connection *conn, int bits,
-                               char *data, size_t data_len) {
+bool WebSocketHandler::handleData(Application *app, 
+                                  Connection *conn,
+                                  int bits,
+                                  char *data,
+                                  size_t data_len) {
   if ((bits & 0x0F) == MG_WEBSOCKET_OPCODE_CONNECTION_CLOSE) {
     return false;
   }
@@ -103,7 +109,7 @@ bool WebSocketBase::handleData(Application *app, Connection *conn, int bits,
   return true;
 }
 
-void WebSocketBase::handleClose(Application *app, const Connection *conn) {
+void WebSocketHandler::handleClose(Application *app, const Connection *conn) {
   auto *connection = const_cast<Connection *>(conn);
 
   std::shared_ptr<std::mutex> user_lock;
@@ -120,30 +126,41 @@ void WebSocketBase::handleClose(Application *app, const Connection *conn) {
   this->OnClose();
 }
 
-thread_local unsigned char WebSocketBase::current_opcode_ = 0x00;
-thread_local std::stringstream WebSocketBase::data_;
+thread_local unsigned char WebSocketHandler::current_opcode_ = 0x00;
+thread_local std::stringstream WebSocketHandler::data_;
 
-void RequestBase::Get(Application *app, Connection *conn) {
+void RequestHandler::Get(Application *app, Connection *conn) {
   Response(app, conn, "");
 }
 
-void RequestBase::Post(Application *app, Connection *conn) {
+void RequestHandler::Post(Application *app, Connection *conn) {
   Response(app, conn, "");
 }
 
-void RequestBase::Put(Application *app, Connection *conn) {
+void RequestHandler::Put(Application *app, Connection *conn) {
   Response(app, conn, "");
 }
 
-void RequestBase::Response(Application *app, Connection *conn,
-                           const std::string &msg) {
+void RequestHandler::Delete(Application *app, Connection *conn) {
+  Response(app, conn, "");
+}
+
+void RequestHandler::Patch(Application *app, Connection *conn) {
+  Response(app, conn, "");
+}
+
+void RequestHandler::Response(Application *app, 
+                              Connection *conn,
+                              const std::string &msg) {
   char *data = const_cast<char *>(msg.c_str());
   mg_send_http_ok(conn, "application/json; charset=utf-8", msg.size());
   mg_write(conn, data, msg.size());
 }
 
-void RequestBase::Response(Application *app, Connection *conn,
-                           const std::string &msg, int status_code) {
+void RequestHandler::Response(Application *app,
+                              Connection *conn,
+                              const std::string &msg,
+                              int status_code) {
   char *data = const_cast<char *>(msg.c_str());
   if (status_code >= 200 && status_code < 300) {
     mg_send_http_ok(conn, "application/json; charset=utf-8", msg.size());
@@ -157,31 +174,38 @@ void RequestBase::Response(Application *app, Connection *conn,
   mg_write(conn, data, msg.size());
 }
 
-std::string RequestBase::GetRequestData(Connection *conn) {
+std::string RequestHandler::GetRequestData(Connection *conn) {
   return Application::getPostData(conn);
 }
 
-const RequestInfo *RequestBase::GetRequestInfo(Connection *conn) {
+const RequestInfo *RequestHandler::GetRequestInfo(Connection *conn) {
   return mg_get_request_info(conn);
 }
 
-bool RequestBase::handleGet(Application *app, Connection *conn) {
-  std::cout << "get" << std::endl;
+bool RequestHandler::handleGet(Application *app, Connection *conn) {
   this->Get(app, conn);
   return true;
 }
 
-bool RequestBase::handlePost(Application *app, Connection *conn) {
-  std::cout << "post" << std::endl;
+bool RequestHandler::handlePost(Application *app, Connection *conn) {
   this->Post(app, conn);
   return true;
 }
 
-bool RequestBase::handlePut(Application *app, Connection *conn) {
+bool RequestHandler::handlePut(Application *app, Connection *conn) {
   this->Put(app, conn);
   return true;
 }
 
-}  // namespace typhoon
-}  // namespace trunk
+bool RequestHandler::handleDelete(Application *app, Connection *conn) {
+  this->Delete(app, conn);
+  return true;
+}
+
+bool RequestHandler::handlePatch(Application *app, Connection *conn) {
+  this->Patch(app, conn);
+  return true;
+}
+
+}  // namespace typhoon 
 

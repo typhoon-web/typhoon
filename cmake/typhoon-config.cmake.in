@@ -1,16 +1,29 @@
 @PACKAGE_INIT@
-# - Config file for the trunk ins package
-# It defines the following variables
-#  Typhoon_INCLUDE_DIRS - include directory
-#  Typhoon_LIBRARY_DIRS - library directory
-#  Typhoon_LIBRARIES   - libraries to link against
+include(CMakeFindDependencyMacro)
 
-# Compute paths
-get_filename_component(TRUNK_MAP_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
-set(Typhoon_INCLUDE_DIRS "@PACKAGE_CMAKE_INSTALL_INCLUDEDIR@")
-set(Typhoon_LIBRARY_DIRS "@PACKAGE_CMAKE_INSTALL_LIBDIR@")
+set_and_check(typhoon_INCLUDE_DIR "@PACKAGE_CMAKE_INSTALL_INCLUDEDIR@")
+set_and_check(typhoon_INCLUDE_DIRS "@PACKAGE_CMAKE_INSTALL_INCLUDEDIR@")
+set_and_check(typhoon_LIBRARY_DIRS "@PACKAGE_CMAKE_INSTALL_LIBDIR@")
+set(typhoon_LIBRARIES typhoon)
 
-include("${TRUNK_MAP_CMAKE_DIR}/typhoon-targets.cmake")
+find_dependency(Threads)
 
-set(Typhoon_LIBRARIES "typhoon")
+set(TYPHOON_SAVED_MODULE_PATH ${CMAKE_MODULE_PATH})
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR})
 
+if(@LOOKUP_LIBDL@)
+  find_dependency(LibDl)
+endif()
+
+if(@LOOKUP_LIBRT@)
+  find_dependency(LibRt)
+endif()
+
+if(@LOOKUP_WINSOCK@)
+  find_dependency(WinSock)
+endif()
+
+set(CMAKE_MODULE_PATH ${CIVETWEB_SAVED_MODULE_PATH})
+unset(CIVETWEB_SAVED_MODULE_PATH)
+
+include("${CMAKE_CURRENT_LIST_DIR}/typhoon-targets.cmake")

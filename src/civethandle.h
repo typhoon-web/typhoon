@@ -1,7 +1,7 @@
 #ifndef TYPHOON_HANDLER_H_
 #define TYPHOON_HANDLER_H_
-#include <CivetServer.h>
-#include <civetweb.h>
+
+#include "civetserver.h"
 #include <string>
 #include <unordered_map>
 #include <memory>
@@ -9,7 +9,6 @@
 #include <sstream>
 #include <mutex>
 
-namespace trunk {
 namespace typhoon {
  
 typedef struct mg_connection Connection;
@@ -17,40 +16,40 @@ typedef struct mg_request_info RequestInfo;
 typedef CivetServer Application;
 
 
-class WebSocketBase : public CivetWebSocketHandler {
+class WebSocketHandler : public CivetWebSocketHandler {
 public:
   thread_local static std::stringstream data_;
   thread_local static unsigned char current_opcode_;
 
-  explicit WebSocketBase(const std::string& name);
-  ~WebSocketBase()= default;
+  explicit WebSocketHandler(const std::string& name);
+  ~WebSocketHandler()= default;
 
   /**
    * @brief 新用户链接 
    */
-  void Open();
+  virtual void Open();
 
   /**
    * @brief用户发来消息
    *
    * @param msg 消息内容
    */
-  void OnMessage(const std::string& msg);
+  virtual void OnMessage(const std::string& msg);
 
   /**
    * @brief 像用户发送ping帧 
    */
-  void OnPong();
+  virtual void OnPong();
 
   /**
    * @brief 接收客户端发来的ping帧
    */
-  void OnPing();
+  virtual void OnPing();
 
   /**
    * @brief 用户关闭链接
    */
-  void OnClose();
+  virtual void OnClose();
  
   /**
    * @brief 向客户端发送消息 
@@ -60,10 +59,10 @@ public:
    * @param skippable 无法获取lock用户跳过
    * @param op_code 数据格式(文本 二进制...) 
    */
-  void SendData(mg_connection *conn,
-	              const std::string &data,
-	              bool skippable = false,
-	              int op_code = MG_WEBSOCKET_OPCODE_TEXT);
+  virtual void SendData(mg_connection *conn,
+	                      const std::string &data,
+	                      bool skippable = false,
+	                      int op_code = MG_WEBSOCKET_OPCODE_TEXT);
 
   /**
    * @brief 广播
@@ -71,7 +70,9 @@ public:
    * @param data
    * @param skippable 无法获取lock用户跳过 
    */
-  void BroadcastData(const std::string &data, bool skippable);
+  virtual void BroadcastData(const std::string &data, bool skippable);
+  
+  virtual std::string name() const final;
 
 private:
   
@@ -105,11 +106,13 @@ private:
 };
 
 
-class RequestBase : public CivetHandler {
+class RequestHandler : public CivetHandler {
 public:
   virtual void Get(Application *app,Connection *conn);
   virtual void Post(Application *app,Connection *conn);
   virtual void Put(Application *app,Connection *conn);
+  virtual void Delete(Application *app,Connection *conn);
+  virtual void Patch(Application *app,Connection *conn);
   void Response(Application *app,Connection *conn, const std::string& msg);
   void Response(Application *app,Connection *conn, const std::string& msg, int status_code);
   const RequestInfo* GetRequestInfo(Connection *conn);
@@ -119,10 +122,13 @@ private:
   bool handleGet(Application *app,Connection *conn) override;
   bool handlePost(Application *app,Connection *conn) override;
   bool handlePut(Application *app,Connection *conn) override;
+  bool handleDelete(Application *app,Connection *conn) override;
+  bool handlePatch(Application *app,Connection *conn) override;
 
 };
 
 } // typhoon   
-} // trunk  
 
-#endif // TYPHOON_HANDLER_H_
+
+#endif // TYPHOON_HANDLER_H_ 
+
