@@ -3,6 +3,7 @@
 #include "src/civethandle.h"
 #include "src/civetserver.h"
 #include <memory>
+#include <cassert>
 #include <unordered_map>
 #include <unistd.h>
 #include <string>

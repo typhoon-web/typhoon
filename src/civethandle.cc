@@ -182,6 +182,16 @@ const RequestInfo *RequestHandler::GetRequestInfo(Connection *conn) {
   return mg_get_request_info(conn);
 }
 
+std::string RequestHandler::GetCookie(Connection *conn, const std::string& name) {
+  std::string s;
+  Application::getCookie(conn, name, s);
+  return s;
+}
+
+std::string RequestHandler::GetMethod(Connection *conn) {
+  return Application::getMethod(conn);
+}
+
 bool RequestHandler::handleGet(Application *app, Connection *conn) {
   this->Get(app, conn);
   return true;

@@ -1,5 +1,5 @@
 #include "typhoon.h"
-#include <unistd.h>
+#include "src/civethandle.h"
 
 
 namespace typhoon {
@@ -20,7 +20,7 @@ Server::Server(Options options) {
     "access_control_allow_origin", options.access_control_allow_origin,
   };
   ping_interval_ = options.websocket_ping_interval;
-  app_ = std::make_shared<CivetServer>(op);
+  app_ = std::make_shared<Application>(op);
 }
 
 Server::Server(int port) {
@@ -58,6 +58,7 @@ void Server::SpinSome() {
 
 void Server::AddHandle(const std::string& uri,
                        const std::shared_ptr<WebSocketHandler>& handle) {
+  assert(ws_pool_.count(handle->name()) == 0);
   ws_pool_[handle->name()] = handle;
   this->app_->addWebSocketHandler(uri, *handle);
 }

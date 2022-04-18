@@ -117,6 +117,8 @@ public:
   void Response(Application *app,Connection *conn, const std::string& msg, int status_code);
   const RequestInfo* GetRequestInfo(Connection *conn);
   std::string GetRequestData(Connection *conn);
+  std::string GetCookie(Connection *conn, const std::string& name);
+  std::string GetMethod(Connection *conn);
 
 private:
   bool handleGet(Application *app,Connection *conn) override;
