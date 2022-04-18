@@ -23,7 +23,8 @@ public:
   Server(int port);
   Server(Options options);
   ~Server();
-  void Start();
+  void Spin();
+  void SpinSome();
   void AddHandle(const std::string& uri, const std::shared_ptr<WebSocketHandler>& handle);
   void AddHandle(const std::string& uri, const std::shared_ptr<RequestHandler>& handle);
 

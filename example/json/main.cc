@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
   typhoon::Server server(options);
   auto api = std::make_shared<MyApi1>();
   server.AddHandle("/api/simple/", api);
-  server.Start();
+  server.Spin();
   return 0;
 }
 

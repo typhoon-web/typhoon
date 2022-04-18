@@ -50,7 +50,7 @@ int main(int argc, char *argv[]) {
   auto ws = std::make_shared<MyApi2>("simple");
   server.AddHandle("/api/simple/", api);
   server.AddHandle("/api/ws/", ws);
-  server.Start();
+  server.Spin();
   return 0;
 }
 

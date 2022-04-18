@@ -37,7 +37,7 @@ Server::Server(int port) {
   app_ = std::make_shared<Application>(op);
 }
 
-void Server::Start() {
+void Server::Spin() {
   while (true) {
     if (ping_interval_ > 0) {
       for (const auto& ws : ws_pool_) {
@@ -48,6 +48,12 @@ void Server::Start() {
       sleep(1);
     }
   }
+}
+
+void Server::SpinSome() {
+  for (const auto& ws : ws_pool_) {
+    ws.second->OnPong();
+  } 
 }
 
 void Server::AddHandle(const std::string& uri,

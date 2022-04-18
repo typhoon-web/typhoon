@@ -2,7 +2,7 @@
 
 # Typhoon
 
-> C++  web server 
+> C++ web server 
 
 ## #1 环境 
 
@@ -21,8 +21,23 @@ make
 sudo make install
 ```
 
-
 ## #3 快速开始 
+
+```txt
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(Typhoon REQUIRED typhoon)
+include_directories(
+    ${Typhoon_INCLUDE_DIRS}
+}
+
+link_directories (
+    ${Typhoon_LIBRARY_DIRS}
+}
+target_link_libraries(${TARGET_NAME}
+  ${Typhoon_LIBRARIES}
+)
+```
+
 
 ### #3.1 http
 
@@ -48,7 +63,6 @@ public:
 
 };
 
-
 int main(int argc, char *argv[]) {
   typhoon::Options options;
   options.port = 9900;
@@ -56,7 +70,7 @@ int main(int argc, char *argv[]) {
   typhoon::Server server(options);
   auto api = std::make_shared<MyApi1>();
   server.AddHandle("/api/simple/", api);
-  server.Start();
+  server.Spin();
   return 0;
 }
 
@@ -64,7 +78,7 @@ int main(int argc, char *argv[]) {
 
 ### #3.2 websocket
 
-```shell
+```cpp
 #include <iostream>
 #include <memory>
 #include <string>
@@ -88,7 +102,6 @@ public:
 
 };
 
-
 int main(int argc, char *argv[]) {
   typhoon::Options options;
   options.port = 9900;
@@ -97,7 +110,7 @@ int main(int argc, char *argv[]) {
   typhoon::Server server(options);
   auto ws = std::make_shared<MyApi2>("simple");
   server.AddHandle("/api/ws/", ws);
-  server.Start();
+  server.Spin();
   return 0;
 }
 
@@ -115,8 +128,6 @@ int main(int argc, char *argv[]) {
 #include <string>
 #include "typhoon.h"
 #include <nlohmann/json.hpp>
-
-
 
 class MyApi1: public typhoon::RequestHandler {
 public: 
@@ -144,7 +155,6 @@ public:
 
 };
 
-
 int main(int argc, char *argv[]) {
   typhoon::Options options;
   options.port = 9900;
@@ -152,7 +162,7 @@ int main(int argc, char *argv[]) {
   typhoon::Server server(options);
   auto api = std::make_shared<MyApi1>();
   server.AddHandle("/api/simple/", api);
-  server.Start();
+  server.Spin();
   return 0;
 }
 
@@ -160,6 +170,5 @@ int main(int argc, char *argv[]) {
 
 ![json_view](./docs/http-json1.png)
 ![json_view](./docs/http-json2.png)
-
 
 
