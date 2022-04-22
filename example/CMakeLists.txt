@@ -1,5 +1,5 @@
 include_directories(
-  ../../typhoon/
+  ../src
 )
 
 add_subdirectory(http)

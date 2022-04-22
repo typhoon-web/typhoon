@@ -1,5 +1,4 @@
 #include "typhoon.h"
-#include "src/civethandle.h"
 
 
 namespace typhoon {
@@ -38,13 +37,15 @@ Server::Server(int port) {
 }
 
 void Server::Spin() {
-  while (true) {
-    if (ping_interval_ > 0) {
+  if (ping_interval_ > 0) {
+    while (true) {
       for (const auto& ws : ws_pool_) {
-        ws.second->OnPong(); 
+          ws.second->OnPong(); 
       }
       usleep(ping_interval_*1000);
-    } else {
+    }
+  } else {
+    while (true) {
       sleep(1);
     }
   }

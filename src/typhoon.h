@@ -1,7 +1,7 @@
 #ifndef TYPHOON_H_
 #define TYPHOON_H_
-#include "src/civethandle.h"
-#include "src/civetserver.h"
+#include "civethandle.h"
+#include "civetserver.h"
 #include <memory>
 #include <cassert>
 #include <unordered_map>

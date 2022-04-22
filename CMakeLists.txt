@@ -30,7 +30,7 @@ include(AddCXXCompilerFlag)
 include(DetermineTargetArchitecture)
 include(CMakeDependentOption)
 
-set(TYPHOON_VERSION "1.15.0" CACHE STRING "The version of the typhoon library")
+set(TYPHOON_VERSION "1.0.1" CACHE STRING "The version of the typhoon library")
 string(REGEX MATCH "([0-9]+)\\.([0-9]+)\\.([0-9]+)" TYPHOON_VERSION_MATCH "${TYPHOON_VERSION}")
 if("${TYPHOON_VERSION_MATCH}" STREQUAL "")
   message(FATAL_ERROR "Must specify a semantic version: major.minor.patch")
@@ -48,6 +48,7 @@ set_property(CACHE TYPHOON_THREAD_STACK_SIZE PROPERTY VALUE ${TYPHOON_THREAD_STA
 message(STATUS "Thread Stack Size - ${TYPHOON_THREAD_STACK_SIZE}")
 
 option(BUILD_SHARED_LIBS "BUILD SHARED LIBS" ON)
+option(BUILD_EXAMPLE "build example" OFF)
 
 # IP Version 6
 option(TYPHOON_ENABLE_IPV6 "Enables the IP version 6 support" OFF)
@@ -361,7 +362,7 @@ add_library(${TARGET_NAME} ${LIB_TYPE}
   src/civetweb.c
   src/civetserver.cc
   src/civethandle.cc
-  typhoon.cc
+  src/typhoon.cc
 )
 find_package(WinSock)
 if(WINSOCK_FOUND)
@@ -416,16 +417,23 @@ install(
   INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
-install(FILES
-  ${PROJECT_SOURCE_DIR}/src/civetweb.h
-  ${PROJECT_SOURCE_DIR}/src/civetserver.h
-  ${PROJECT_SOURCE_DIR}/src/civethandle.h
-  ${PROJECT_SOURCE_DIR}/typhoon.h
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-  COMPONENT ${TARGET_NAME}
+install(DIRECTORY src/
+    DESTINATION include/typhoon
+    FILES_MATCHING
+    PATTERN "*.h"
+    PATTERN "*.hpp"
+    PATTERN "*.inl"
 )
 
-add_subdirectory(example)
+# install(FILES
+  # ${PROJECT_SOURCE_DIR}/typhoon.h
+  # DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${TARGET_NAME}
+  # COMPONENT ${TARGET_NAME}
+# )
+
+if(BUILD_EXAMPLE)
+  add_subdirectory(example)
+endif(BUILD_EXAMPLE)
 
 include(CTest)
 include(CMakePackageConfigHelpers)
