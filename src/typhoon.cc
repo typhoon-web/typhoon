@@ -14,6 +14,8 @@ Server::Server(Options options) {
       options.root,
       "listening_ports",
       std::to_string(options.port),
+      "num_threads",
+      std::to_string(options.num_threads),
       "access_control_allow_headers",
       options.access_control_allow_headers,
       "access_control_allow_methods",

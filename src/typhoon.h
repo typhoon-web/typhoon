@@ -11,8 +11,9 @@
 namespace typhoon {
 
 struct Options {
-  int port;
-  int websocket_ping_interval = 0; // ping client time (ms)
+  size_t port;
+  size_t websocket_ping_interval = 0; // ping client time (ms)
+  size_t num_threads = 6;
   std::string root = ".";
   std::string access_control_allow_headers = "*";
   std::string access_control_allow_methods = "*";

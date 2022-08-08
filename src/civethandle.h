@@ -3,6 +3,7 @@
 
 #include "civetserver.h"
 #include <iostream>
+#include <functional>
 #include <memory>
 #include <mutex>
 #include <sstream>
