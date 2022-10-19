@@ -1,13 +1,15 @@
 #include "civethandle.h"
+
+#include <cstring>
 #include <string>
 
 namespace typhoon {
 
-WebSocketHandler::WebSocketHandler(const std::string &name) : name_(name) {}
+WebSocketHandler::WebSocketHandler(const std::string& name) : name_(name) {}
 
 void WebSocketHandler::Open() { std::cout << "on open" << std::endl; }
 
-void WebSocketHandler::OnMessage(const std::string &msg) {}
+void WebSocketHandler::OnMessage(const std::string& msg, int op_code) {}
 
 void WebSocketHandler::OnPong() { std::cout << "on pong" << std::endl; }
 
@@ -15,7 +17,7 @@ void WebSocketHandler::OnPing() {}
 
 void WebSocketHandler::OnClose() { std::cout << "on close" << std::endl; }
 
-void WebSocketHandler::SendData(mg_connection *conn, const std::string &data,
+void WebSocketHandler::SendData(mg_connection* conn, const std::string& data,
                                 bool skippable, int op_code) {
   std::shared_ptr<std::mutex> connection_lock;
   {
@@ -24,11 +26,14 @@ void WebSocketHandler::SendData(mg_connection *conn, const std::string &data,
   }
 
   if (!connection_lock->try_lock()) {
-    if (skippable) {
-      return;
-    }
-    connection_lock->lock();
-    std::unique_lock<std::mutex> lock(mutex_);
+    // TODO: 获取失败, 退出, 不等待
+    return;
+    // if (skippable) {
+    //   return;
+    // }
+    // connection_lock->lock();
+    // std::unique_lock<std::mutex> lock(mutex_);
+    /// 等待
   }
 
   int ret = mg_websocket_write(conn, op_code, data.c_str(), data.size());
@@ -42,32 +47,33 @@ void WebSocketHandler::SendData(mg_connection *conn, const std::string &data,
   }
 }
 
-void WebSocketHandler::BroadcastData(const std::string &data, bool skippable) {
-  std::vector<Connection *> connections_to_send;
+void WebSocketHandler::BroadcastData(const std::string& data, bool skippable,
+                                     int op_code) {
+  std::vector<Connection*> connections_to_send;
   {
     std::unique_lock<std::mutex> lock(mutex_);
     if (user_pool_.empty()) {
       return;
     }
-    for (auto &kv : user_pool_) {
-      Connection *conn = kv.first;
+    for (auto& kv : user_pool_) {
+      Connection* conn = kv.first;
       connections_to_send.push_back(conn);
     }
   }
 
-  for (Connection *conn : connections_to_send) {
-    SendData(conn, data, skippable);
+  for (Connection* conn : connections_to_send) {
+    SendData(conn, data, skippable, op_code);
   }
 }
 
 std::string WebSocketHandler::name() const { return name_; }
 
-bool WebSocketHandler::handleConnection(Application *app,
-                                        const mg_connection *conn) {
+bool WebSocketHandler::handleConnection(Application* app,
+                                        const mg_connection* conn) {
   return true;
 }
 
-void WebSocketHandler::handleReadyState(Application *app, Connection *conn) {
+void WebSocketHandler::handleReadyState(Application* app, Connection* conn) {
   {
     std::unique_lock<std::mutex> lock(mutex_);
     user_pool_.emplace(conn, std::make_shared<std::mutex>());
@@ -75,8 +81,8 @@ void WebSocketHandler::handleReadyState(Application *app, Connection *conn) {
   this->Open();
 }
 
-bool WebSocketHandler::handleData(Application *app, Connection *conn, int bits,
-                                  char *data, size_t data_len) {
+bool WebSocketHandler::handleData(Application* app, Connection* conn, int bits,
+                                  char* data, size_t data_len) {
   if ((bits & 0x0F) == MG_WEBSOCKET_OPCODE_CONNECTION_CLOSE) {
     return false;
   }
@@ -87,12 +93,15 @@ bool WebSocketHandler::handleData(Application *app, Connection *conn, int bits,
   bool is_final_fragment = bits & 0x80;
   if (is_final_fragment) {
     switch (current_opcode_) {
-    case MG_WEBSOCKET_OPCODE_TEXT:
-      std::cout << data_.str() << std::endl; // print request data
-      this->OnMessage(data_.str());
-      break;
-    default:
-      break;
+      case MG_WEBSOCKET_OPCODE_TEXT:
+        this->OnMessage(data_.str(), MG_WEBSOCKET_OPCODE_TEXT);
+        break;
+      case MG_WEBSOCKET_OPCODE_BINARY:
+        this->OnMessage(data_.str(), MG_WEBSOCKET_OPCODE_BINARY);
+        break;
+      default:
+        std::cout << "[error] opcode does not exist!" << std::endl;
+        break;
     }
     current_opcode_ = 0x00;
     data_.clear();
@@ -102,8 +111,8 @@ bool WebSocketHandler::handleData(Application *app, Connection *conn, int bits,
   return true;
 }
 
-void WebSocketHandler::handleClose(Application *app, const Connection *conn) {
-  auto *connection = const_cast<Connection *>(conn);
+void WebSocketHandler::handleClose(Application* app, const Connection* conn) {
+  auto* connection = const_cast<Connection*>(conn);
 
   std::shared_ptr<std::mutex> user_lock;
   {
@@ -113,45 +122,48 @@ void WebSocketHandler::handleClose(Application *app, const Connection *conn) {
 
   {
     std::unique_lock<std::mutex> lock_connection(*user_lock);
+    this->OnClose();
+  }
+
+  {
     std::unique_lock<std::mutex> lock(mutex_);
     user_pool_.erase(connection);
   }
-  this->OnClose();
 }
 
 thread_local unsigned char WebSocketHandler::current_opcode_ = 0x00;
 thread_local std::stringstream WebSocketHandler::data_;
 
-void RequestHandler::Get(Application *app, Connection *conn) {
+void RequestHandler::Get(Application* app, Connection* conn) {
   Response(app, conn, "");
 }
 
-void RequestHandler::Post(Application *app, Connection *conn) {
+void RequestHandler::Post(Application* app, Connection* conn) {
   Response(app, conn, "");
 }
 
-void RequestHandler::Put(Application *app, Connection *conn) {
+void RequestHandler::Put(Application* app, Connection* conn) {
   Response(app, conn, "");
 }
 
-void RequestHandler::Delete(Application *app, Connection *conn) {
+void RequestHandler::Delete(Application* app, Connection* conn) {
   Response(app, conn, "");
 }
 
-void RequestHandler::Patch(Application *app, Connection *conn) {
+void RequestHandler::Patch(Application* app, Connection* conn) {
   Response(app, conn, "");
 }
 
-void RequestHandler::Response(Application *app, Connection *conn,
-                              const std::string &msg) {
-  char *data = const_cast<char *>(msg.c_str());
+void RequestHandler::Response(Application* app, Connection* conn,
+                              const std::string& msg) {
+  char* data = const_cast<char*>(msg.c_str());
   mg_send_http_ok(conn, "application/json; charset=utf-8", msg.size());
   mg_write(conn, data, msg.size());
 }
 
-void RequestHandler::Response(Application *app, Connection *conn,
-                              const std::string &msg, int status_code) {
-  char *data = const_cast<char *>(msg.c_str());
+void RequestHandler::Response(Application* app, Connection* conn,
+                              const std::string& msg, int status_code) {
+  char* data = const_cast<char*>(msg.c_str());
   if (status_code >= 200 && status_code < 300) {
     mg_send_http_ok(conn, "application/json; charset=utf-8", msg.size());
   } else if (status_code >= 300 && status_code < 400) {
@@ -164,26 +176,37 @@ void RequestHandler::Response(Application *app, Connection *conn,
   mg_write(conn, data, msg.size());
 }
 
-std::string RequestHandler::GetRequestData(Connection *conn) {
+std::string RequestHandler::GetRequestData(Connection* conn) {
   return Application::getPostData(conn);
 }
 
-const RequestInfo *RequestHandler::GetRequestInfo(Connection *conn) {
+std::string RequestHandler::GetParam(Connection* conn, const char* key,
+                                     size_t occurrence) {
+  std::string ret;
+  Application::getParam(conn, key, ret, occurrence);
+  return ret;
+}
+
+const RequestInfo* RequestHandler::GetRequestInfo(Connection* conn) {
   return mg_get_request_info(conn);
 }
 
-std::string RequestHandler::GetCookie(Connection *conn,
-                                      const std::string &name) {
+std::string RequestHandler::GetCookie(Connection* conn,
+                                      const std::string& name) {
   std::string s;
   Application::getCookie(conn, name, s);
   return s;
 }
 
-std::string RequestHandler::GetMethod(Connection *conn) {
+void RequestHandler::SetCookie(Connection* conn, const std::string& value) {
+  Application::setCookie(conn, value);
+}
+
+std::string RequestHandler::GetMethod(Connection* conn) {
   return Application::getMethod(conn);
 }
 
-bool RequestHandler::handleGet(Application *app, Connection *conn) {
+bool RequestHandler::handleGet(Application* app, Connection* conn) {
   if (0 == callback_.count(Method::GET)) {
     this->Get(app, conn);
   } else {
@@ -192,7 +215,7 @@ bool RequestHandler::handleGet(Application *app, Connection *conn) {
   return true;
 }
 
-bool RequestHandler::handlePost(Application *app, Connection *conn) {
+bool RequestHandler::handlePost(Application* app, Connection* conn) {
   if (0 == callback_.count(Method::POST)) {
     this->Post(app, conn);
   } else {
@@ -201,7 +224,7 @@ bool RequestHandler::handlePost(Application *app, Connection *conn) {
   return true;
 }
 
-bool RequestHandler::handlePut(Application *app, Connection *conn) {
+bool RequestHandler::handlePut(Application* app, Connection* conn) {
   if (0 == callback_.count(Method::PUT)) {
     this->Put(app, conn);
   } else {
@@ -210,7 +233,7 @@ bool RequestHandler::handlePut(Application *app, Connection *conn) {
   return true;
 }
 
-bool RequestHandler::handleDelete(Application *app, Connection *conn) {
+bool RequestHandler::handleDelete(Application* app, Connection* conn) {
   if (0 == callback_.count(Method::DELETE)) {
     this->Delete(app, conn);
   } else {
@@ -219,7 +242,7 @@ bool RequestHandler::handleDelete(Application *app, Connection *conn) {
   return true;
 }
 
-bool RequestHandler::handlePatch(Application *app, Connection *conn) {
+bool RequestHandler::handlePatch(Application* app, Connection* conn) {
   if (0 == callback_.count(Method::PATCH)) {
     this->Patch(app, conn);
   } else {
@@ -232,4 +255,4 @@ void RequestHandler::RegisterMethod(Method method, Callback callback) {
   callback_[method] = callback;
 }
 
-} // namespace typhoon
+}  // namespace typhoon
