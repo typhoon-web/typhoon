@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+message Point3D {
+  double x = 1;
+  double y = 2;
+  double z = 3;
+}
+
+message Quaternion {
+  double qx = 1;
+  double qy = 2;
+  double qz = 3;
+  double qw = 4;
+}
+
+message Vector3 {
+  double x = 1;
+  double y = 2;
+  double z = 3;
+}
+
+message Pose {
+  Point3D position = 1;
+  Quaternion orientation = 2;
+}
+
+// protoc -I=. --cpp_out=. *.proto
+// protoc -I=. --python_out=. *.proto
+
