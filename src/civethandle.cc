@@ -22,10 +22,13 @@ void WebSocketHandler::SendData(mg_connection* conn, const std::string& data,
   std::shared_ptr<std::mutex> connection_lock;
   {
     std::unique_lock<std::mutex> lock(mutex_);
-    connection_lock = user_pool_[conn];
+    if (0 == user_pool_.count(conn)) {
+      return;
+    }
+    connection_lock = user_pool_.at(conn);
   }
 
-  if (!connection_lock->try_lock()) {
+  if (nullptr == connection_lock || !connection_lock->try_lock()) {
     // TODO: 获取失败, 退出, 不等待
     return;
     // if (skippable) {
