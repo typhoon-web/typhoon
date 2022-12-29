@@ -30,7 +30,7 @@ class WebSocketHandler : public CivetWebSocketHandler {
   /**
    * @brief 新用户链接
    */
-  virtual void Open();
+  virtual void Open(Application* app, Connection* conn);
 
   /**
    * @brief用户发来消息
@@ -38,7 +38,8 @@ class WebSocketHandler : public CivetWebSocketHandler {
    * @param msg 消息内容
    * @param op_code 消息类型,text or binary
    */
-  virtual void OnMessage(const std::string& msg,
+  virtual void OnMessage(Application* app, Connection* conn,
+                         const std::string& msg,
                          int op_code = MG_WEBSOCKET_OPCODE_TEXT);
 
   /**
@@ -54,7 +55,7 @@ class WebSocketHandler : public CivetWebSocketHandler {
   /**
    * @brief 用户关闭链接
    */
-  virtual void OnClose();
+  virtual void OnClose(Application* app, const Connection* conn);
 
   /**
    * @brief 向客户端发送消息
@@ -64,7 +65,7 @@ class WebSocketHandler : public CivetWebSocketHandler {
    * @param skippable 无法获取lock用户跳过
    * @param op_code 数据格式(文本 二进制...)
    */
-  virtual void SendData(mg_connection* conn, const std::string& data,
+  virtual void SendData(Connection* conn, const std::string& data,
                         bool skippable = false,
                         int op_code = MG_WEBSOCKET_OPCODE_TEXT);
 

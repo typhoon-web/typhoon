@@ -7,17 +7,18 @@ namespace typhoon {
 
 WebSocketHandler::WebSocketHandler(const std::string& name) : name_(name) {}
 
-void WebSocketHandler::Open() { std::cout << "on open" << std::endl; }
+void WebSocketHandler::Open(Application* app, Connection* conn) {}
 
-void WebSocketHandler::OnMessage(const std::string& msg, int op_code) {}
+void WebSocketHandler::OnMessage(Application* app, Connection* conn,
+                                 const std::string& msg, int op_code) {}
 
-void WebSocketHandler::OnPong() { std::cout << "on pong" << std::endl; }
+void WebSocketHandler::OnPong() {}
 
 void WebSocketHandler::OnPing() {}
 
-void WebSocketHandler::OnClose() { std::cout << "on close" << std::endl; }
+void WebSocketHandler::OnClose(Application* app, const Connection* conn) {}
 
-void WebSocketHandler::SendData(mg_connection* conn, const std::string& data,
+void WebSocketHandler::SendData(Connection* conn, const std::string& data,
                                 bool skippable, int op_code) {
   std::shared_ptr<std::mutex> connection_lock;
   {
@@ -28,15 +29,8 @@ void WebSocketHandler::SendData(mg_connection* conn, const std::string& data,
     connection_lock = user_pool_.at(conn);
   }
 
-  if (nullptr == connection_lock || !connection_lock->try_lock()) {
-    // TODO: 获取失败, 退出, 不等待
+  if (!connection_lock || !connection_lock->try_lock()) {
     return;
-    // if (skippable) {
-    //   return;
-    // }
-    // connection_lock->lock();
-    // std::unique_lock<std::mutex> lock(mutex_);
-    /// 等待
   }
 
   int ret = mg_websocket_write(conn, op_code, data.c_str(), data.size());
@@ -72,7 +66,7 @@ void WebSocketHandler::BroadcastData(const std::string& data, bool skippable,
 std::string WebSocketHandler::name() const { return name_; }
 
 bool WebSocketHandler::handleConnection(Application* app,
-                                        const mg_connection* conn) {
+                                        const Connection* conn) {
   return true;
 }
 
@@ -81,7 +75,7 @@ void WebSocketHandler::handleReadyState(Application* app, Connection* conn) {
     std::unique_lock<std::mutex> lock(mutex_);
     user_pool_.emplace(conn, std::make_shared<std::mutex>());
   }
-  this->Open();
+  this->Open(app, conn);
 }
 
 bool WebSocketHandler::handleData(Application* app, Connection* conn, int bits,
@@ -97,10 +91,10 @@ bool WebSocketHandler::handleData(Application* app, Connection* conn, int bits,
   if (is_final_fragment) {
     switch (current_opcode_) {
       case MG_WEBSOCKET_OPCODE_TEXT:
-        this->OnMessage(data_.str(), MG_WEBSOCKET_OPCODE_TEXT);
+        this->OnMessage(app, conn, data_.str(), MG_WEBSOCKET_OPCODE_TEXT);
         break;
       case MG_WEBSOCKET_OPCODE_BINARY:
-        this->OnMessage(data_.str(), MG_WEBSOCKET_OPCODE_BINARY);
+        this->OnMessage(app, conn, data_.str(), MG_WEBSOCKET_OPCODE_BINARY);
         break;
       default:
         std::cout << "[error] opcode does not exist!" << std::endl;
@@ -125,7 +119,7 @@ void WebSocketHandler::handleClose(Application* app, const Connection* conn) {
 
   {
     std::unique_lock<std::mutex> lock_connection(*user_lock);
-    this->OnClose();
+    this->OnClose(app, conn);
   }
 
   {
