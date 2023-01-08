@@ -137,8 +137,13 @@ class RequestHandler : public CivetHandler {
    * @param msg 返回数据
    * @param status_code 返回状态码
    * */
-  static void Response(Application* app, Connection* conn,
-                       const std::string& msg, int status_code);
+  static void Response(
+      Application* app, Connection* conn, const char* msg, int status_code,
+      std::string content_type = "application/json; charset=utf-8");
+
+  static int Write(Application* app, Connection* conn, const void* data,
+                   size_t len);
+
   static const RequestInfo* GetRequestInfo(Connection* conn);
   /**
    * @brief POST请求, 获取请求体数据
@@ -159,6 +164,9 @@ class RequestHandler : public CivetHandler {
   static std::string GetCookie(Connection* conn, const std::string& name);
   static void SetCookie(Connection* conn, const std::string& value);
   static std::string GetMethod(Connection* conn);
+  static int AddResoposeHeader(Connection* conn, const std::string& header,
+                               const std::string& value);
+  static int SendResponseHeader(Connection* conn);
   void RegisterMethod(Method method, Callback callback);
 
  private:

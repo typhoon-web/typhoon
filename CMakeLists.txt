@@ -2,7 +2,7 @@ cmake_minimum_required (VERSION 3.3.0)
 cmake_policy(VERSION 3.2.2)
 cmake_policy(SET CMP0054 NEW)
 
-project(typhoon VERSION 2.1.1)
+project(typhoon VERSION 3.0.0)
 
 set(TARGET_NAME ${PROJECT_NAME})
 set(CMAKE_CXX_STANDARD 14)

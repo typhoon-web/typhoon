@@ -159,18 +159,23 @@ void RequestHandler::Response(Application* app, Connection* conn,
 }
 
 void RequestHandler::Response(Application* app, Connection* conn,
-                              const std::string& msg, int status_code) {
-  char* data = const_cast<char*>(msg.c_str());
+                              const char* data, int status_code,
+                              std::string content_type) {
   if (status_code >= 200 && status_code < 300) {
-    mg_send_http_ok(conn, "application/json; charset=utf-8", msg.size());
+    mg_send_http_ok(conn, content_type.c_str(), strlen(data));
   } else if (status_code >= 300 && status_code < 400) {
     mg_send_http_redirect(conn, "", status_code);
   } else if (status_code >= 400 && status_code < 500) {
-    mg_send_http_ok(conn, "application/json; charset=utf-8", msg.size());
+    mg_send_http_ok(conn, content_type.c_str(), strlen(data));
   } else {
-    mg_send_http_ok(conn, "application/json; charset=utf-8", msg.size());
+    mg_send_http_ok(conn, content_type.c_str(), strlen(data));
   }
-  mg_write(conn, data, msg.size());
+  mg_write(conn, data, strlen(data));
+}
+
+int RequestHandler::Write(Application* app, Connection* conn, const void* data,
+                          size_t len) {
+  return mg_write(conn, data, len);
 }
 
 std::string RequestHandler::GetRequestData(Connection* conn) {
@@ -246,6 +251,21 @@ bool RequestHandler::handlePatch(Application* app, Connection* conn) {
     callback_[Method::PATCH](app, conn);
   }
   return true;
+}
+
+int RequestHandler::AddResoposeHeader(Connection* conn,
+                                      const std::string& header,
+                                      const std::string& value) {
+  if (header.empty() || value.empty()) {
+    return -1;
+  }
+  mg_response_header_start(conn, 200);
+  return mg_response_header_add(conn, header.c_str(), value.c_str(),
+                                value.size());
+}
+
+int RequestHandler::SendResponseHeader(Connection* conn) {
+  return mg_response_header_send(conn);
 }
 
 void RequestHandler::RegisterMethod(Method method, Callback callback) {

@@ -46,7 +46,7 @@ Server::Server(int port) {
   app_ = std::make_shared<Application>(op);
 }
 
-void Server::Bind(const std::string &uri, RequestHandler::Method method,
+void Server::Bind(const std::string& uri, RequestHandler::Method method,
                   Callback callback) {
   // 判断handler是否存在
   std::shared_ptr<RequestHandler> handler;
@@ -64,7 +64,7 @@ void Server::Bind(const std::string &uri, RequestHandler::Method method,
 void Server::Spin() {
   if (ping_interval_ > 0) {
     while (true) {
-      for (const auto &ws : ws_pool_) {
+      for (const auto& ws : ws_pool_) {
         ws.second->OnPong();
       }
       usleep(ping_interval_ * 1000);
@@ -77,37 +77,37 @@ void Server::Spin() {
 }
 
 void Server::SpinSome() {
-  for (const auto &ws : ws_pool_) {
+  for (const auto& ws : ws_pool_) {
     ws.second->OnPong();
   }
 }
 
-void Server::AddHandle(const std::string &uri,
-                       const std::shared_ptr<WebSocketHandler> &handle) {
+void Server::AddHandle(const std::string& uri,
+                       const std::shared_ptr<WebSocketHandler>& handle) {
   assert(ws_pool_.count(handle->name()) == 0);
   ws_pool_[handle->name()] = handle;
   this->app_->addWebSocketHandler(uri, *handle);
 }
 
-void Server::AddHandle(const std::string &uri,
-                       const std::shared_ptr<RequestHandler> &handle) {
+void Server::AddHandle(const std::string& uri,
+                       const std::shared_ptr<RequestHandler>& handle) {
   this->app_->addHandler(uri, *handle);
 }
 
-void Server::Get(const std::string &uri, Callback callback) {
+void Server::Get(const std::string& uri, Callback callback) {
   Bind(uri, RequestHandler::Method::GET, callback);
 }
-void Server::Post(const std::string &uri, Callback callback) {
+void Server::Post(const std::string& uri, Callback callback) {
   Bind(uri, RequestHandler::Method::POST, callback);
 }
-void Server::Put(const std::string &uri, Callback callback) {
+void Server::Put(const std::string& uri, Callback callback) {
   Bind(uri, RequestHandler::Method::PUT, callback);
 }
-void Server::Delete(const std::string &uri, Callback callback) {
+void Server::Delete(const std::string& uri, Callback callback) {
   Bind(uri, RequestHandler::Method::DELETE, callback);
 }
-void Server::Patch(const std::string &uri, Callback callback) {
+void Server::Patch(const std::string& uri, Callback callback) {
   Bind(uri, RequestHandler::Method::PATCH, callback);
 }
 
-} // namespace typhoon
+}  // namespace typhoon
